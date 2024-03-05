@@ -48,7 +48,7 @@ def modified_forward(
     with context_manager:
         outputs = batch_forward(
             model,
-            inputs=inputs,
+            inputs=inputs.to('cuda'),
             forward_kwargs=forward_kwargs,
             batch_size=batch_size,
         )
@@ -98,18 +98,17 @@ def batch_forward(
     batch_size = batch_size or _auto_batch_size(model, inputs)
     forward_kwargs = _get_forward_kwargs(forward_kwargs)
 
-    batches = _get_batches(inputs, batch_size, show_progress=show_progress)
+    batches = _get_batches(inputs.to('cuda'), batch_size, show_progress=show_progress)
 
     device = model.device
 
     outputs = []
     for batch_inputs in batches:
-        batch_inputs = nested_apply(batch_inputs, lambda t: t.to(device))
-
+        batch_inputs = nested_apply(batch_inputs, lambda t: t.to('cuda'))
         with torch.no_grad():
             out = model(**batch_inputs, **forward_kwargs)
             output_class = out.__class__
-            out = nested_apply(out, lambda t: t.cpu())
+            out = nested_apply(out, lambda t: t.to('cuda'))
         outputs.append(out)
 
     return output_class(**nested_concat(outputs))
@@ -150,7 +149,7 @@ def batch_generate(
 
     generate_ids = []
     for batch_inputs in batches:
-        batch_inputs = nested_apply(batch_inputs, lambda t: t.to("cpu"))
+        batch_inputs = nested_apply(batch_inputs, lambda t: t.to("cuda"))
 
         batch_ids = model.generate(
             **batch_inputs,

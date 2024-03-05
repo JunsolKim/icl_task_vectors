@@ -91,7 +91,10 @@ def _create_device_map(model_path: str) -> dict[str, int]:
     device_map_other = {k: 0 for k in device_map_other}
     # split the layers evenly across the other devices (1-num_devices)
     num_layers = len(device_map_layers)
-    num_layers_per_device = math.ceil(num_layers / (num_devices - 1))
+    if num_devices == 1:
+        num_layers_per_device = num_layers
+    else:
+        num_layers_per_device = math.ceil(num_layers / (num_devices - 1))
     device_map_layers = {k: (i // num_layers_per_device + 1) for i, k in enumerate(device_map_layers)}
 
     device_map = {**device_map_other, **device_map_layers}
@@ -169,4 +172,7 @@ MODEL_PATHS = {
         "6.7B": "cerebras/Cerebras-GPT-6.7B",
         "13B": "cerebras/Cerebras-GPT-13B",
     },
+    "phi2": {
+        "2B": "microsoft/phi-2"
+    }
 }
